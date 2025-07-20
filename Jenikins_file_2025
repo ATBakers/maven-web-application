@@ -1,0 +1,28 @@
+node{ 
+
+def mavenHome = tool name: "maven3.9.10"
+
+stage('CheckOutCode'){
+git branch: 'development', credentialsId: 'fccc1883-223f-470a-ab11-259596ecd411', url: 'https://github.com/ATBakers/maven-web-application.git'
+}
+
+stage('Build'){
+sh "${mavenHome}/bin/mvn clean package"
+}
+
+stage('ExecuteSonarQubeReport'){
+sh "${mavenHome}/bin/mvn clean sonar:sonar"
+}
+
+stage('UploadArtifactsIntoArtifactoryrepo'){
+sh "${mavenHome}/bin/mvn clean deploy"
+}
+
+stage('DeployAppintoTomcatServer'){
+sshagent(['e6059557-1b0b-432a-b044-c05d8adced4f']){
+sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war
+ec2-user@172.31.43.230:/opt/apache-tomcat-9.0.106/webapps/"
+}
+}
+
+}
